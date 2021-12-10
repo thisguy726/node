@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "markdown-extensions": "^1.1.1",
-    "remark": "^14.0.1",
+    "remark": "^14.0.2",
     "remark-gfm": "^2.0.0",
     "remark-preset-lint-node": "^3.0.1",
     "unified-args": "^9.0.2"
