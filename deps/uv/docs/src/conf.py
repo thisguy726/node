@@ -22,16 +22,16 @@ def get_libuv_version():
         data = f.read()
     try:
         m = re.search(r"""^#define UV_VERSION_MAJOR (\d+)$""", data, re.MULTILINE)
-        major = int(m.group(1))
+        major = int(m[1])
         m = re.search(r"""^#define UV_VERSION_MINOR (\d+)$""", data, re.MULTILINE)
-        minor = int(m.group(1))
+        minor = int(m[1])
         m = re.search(r"""^#define UV_VERSION_PATCH (\d+)$""", data, re.MULTILINE)
-        patch = int(m.group(1))
+        patch = int(m[1])
         m = re.search(r"""^#define UV_VERSION_IS_RELEASE (\d)$""", data, re.MULTILINE)
-        is_release = int(m.group(1))
+        is_release = int(m[1])
         m = re.search(r"""^#define UV_VERSION_SUFFIX \"(\w*)\"$""", data, re.MULTILINE)
-        suffix = m.group(1)
-        return '%d.%d.%d%s' % (major, minor, patch, '-%s' % suffix if not is_release else '')
+        suffix = m[1]
+        return '%d.%d.%d%s' % (major, minor, patch, '' if is_release else f'-{suffix}')
     except Exception:
         return 'unknown'
 
@@ -133,7 +133,7 @@ html_theme = 'nature'
 html_title = 'libuv documentation'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-html_short_title = 'libuv %s documentation' % version
+html_short_title = f'libuv {version} documentation'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
