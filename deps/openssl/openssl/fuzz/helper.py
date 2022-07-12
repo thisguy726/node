@@ -40,11 +40,15 @@ def _add(d):
 
 def main():
     _create(FUZZER)
-    _create(FUZZER + "-crash")
-    _add(FUZZER + "-seed")
+    _create(f"{FUZZER}-crash")
+    _add(f"{FUZZER}-seed")
 
-    cmd = ([os.path.abspath(os.path.join(THIS_DIR, FUZZER))]  + sys.argv[2:]
-           + ["-artifact_prefix=" + corpora[1] + "/"] + corpora)
+    cmd = (
+        [os.path.abspath(os.path.join(THIS_DIR, FUZZER))]
+        + sys.argv[2:]
+        + [f"-artifact_prefix={corpora[1]}/"]
+    ) + corpora
+
     print(" ".join(cmd))
     subprocess.call(cmd)
 

@@ -793,20 +793,20 @@ auto_downloads = nodedownload.parse(options.download_list)
 
 def error(msg):
   prefix = '\033[1m\033[31mERROR\033[0m' if os.isatty(1) else 'ERROR'
-  print('%s: %s' % (prefix, msg))
+  print(f'{prefix}: {msg}')
   sys.exit(1)
 
 def warn(msg):
   warn.warned = True
   prefix = '\033[1m\033[93mWARNING\033[0m' if os.isatty(1) else 'WARNING'
-  print('%s: %s' % (prefix, msg))
+  print(f'{prefix}: {msg}')
 
 # track if warnings occurred
 warn.warned = False
 
 def info(msg):
   prefix = '\033[1m\033[32mINFO\033[0m' if os.isatty(1) else 'INFO'
-  print('%s: %s' % (prefix, msg))
+  print(f'{prefix}: {msg}')
 
 def print_verbose(x):
   if not options.verbose:
@@ -837,10 +837,7 @@ def pkg_config(pkg):
   for flag in ['--libs-only-l', '--cflags-only-I',
                '--libs-only-L', '--modversion']:
     args += [flag]
-    if isinstance(pkg, list):
-      args += pkg
-    else:
-      args += [pkg]
+    args += pkg if isinstance(pkg, list) else [pkg]
     try:
       proc = subprocess.Popen(shlex.split(pkg_config) + args,
                               stdout=subprocess.PIPE)
@@ -863,7 +860,7 @@ def try_check_compiler(cc, lang):
   proc.stdin.write(b'__clang__ __GNUC__ __GNUC_MINOR__ __GNUC_PATCHLEVEL__ '
                    b'__clang_major__ __clang_minor__ __clang_patchlevel__')
 
-  values = (to_utf8(proc.communicate()[0]).split() + ['0'] * 7)[0:7]
+  values = (to_utf8(proc.communicate()[0]).split() + ['0'] * 7)[:7]
   is_clang = values[0] == '1'
   gcc_version = tuple(map(int, values[1:1+3]))
   clang_version = tuple(map(int, values[4:4+3])) if is_clang else None
@@ -888,10 +885,8 @@ def get_version_helper(cc, regexp):
        consider adjusting the CC environment variable if you installed
        it in a non-standard prefix.''')
 
-  match = re.search(regexp, to_utf8(proc.communicate()[1]))
-
-  if match:
-    return match.group(2)
+  if match := re.search(regexp, to_utf8(proc.communicate()[1])):
+    return match[2]
   else:
     return '0.0'
 
@@ -906,11 +901,9 @@ def get_nasm_version(asm):
          and refer BUILDING.md.''')
     return '0.0'
 
-  match = re.match(r"NASM version ([2-9]\.[0-9][0-9]+)",
-                   to_utf8(proc.communicate()[0]))
-
-  if match:
-    return match.group(1)
+  if match := re.match(r"NASM version ([2-9]\.[0-9][0-9]+)",
+                       to_utf8(proc.communicate()[0])):
+    return match[1]
   else:
     return '0.0'
 
@@ -939,13 +932,10 @@ def get_gas_version(cc):
        it in a non-standard prefix.''')
 
   gas_ret = to_utf8(proc.communicate()[1])
-  match = re.match(r"GNU assembler version ([2-9]\.[0-9]+)", gas_ret)
-
-  if match:
-    return match.group(1)
-  else:
-    warn('Could not recognize `gas`: ' + gas_ret)
-    return '0.0'
+  if match := re.match(r"GNU assembler version ([2-9]\.[0-9]+)", gas_ret):
+    return match[1]
+  warn(f'Could not recognize `gas`: {gas_ret}')
+  return '0.0'
 
 # Note: Apple clang self-reports as clang 4.2.0 and gcc 4.2.1.  It passes
 # the version check more by accident than anything else but a more rigorous
@@ -963,26 +953,28 @@ def check_compiler(o):
 
   ok, is_clang, clang_version, gcc_version = try_check_compiler(CXX, 'c++')
   version_str = ".".join(map(str, clang_version if is_clang else gcc_version))
-  print_verbose('Detected %sC++ compiler (CXX=%s) version: %s' %
-                ('clang ' if is_clang else '', CXX, version_str))
+  print_verbose(
+      f"Detected {'clang ' if is_clang else ''}C++ compiler (CXX={CXX}) version: {version_str}"
+  )
   if not ok:
-    warn('failed to autodetect C++ compiler version (CXX=%s)' % CXX)
+    warn(f'failed to autodetect C++ compiler version (CXX={CXX})')
   elif clang_version < (8, 0, 0) if is_clang else gcc_version < (8, 3, 0):
-    warn('C++ compiler (CXX=%s, %s) too old, need g++ 8.3.0 or clang++ 8.0.0' %
-         (CXX, version_str))
+    warn(
+        f'C++ compiler (CXX={CXX}, {version_str}) too old, need g++ 8.3.0 or clang++ 8.0.0'
+    )
 
   ok, is_clang, clang_version, gcc_version = try_check_compiler(CC, 'c')
   version_str = ".".join(map(str, clang_version if is_clang else gcc_version))
-  print_verbose('Detected %sC compiler (CC=%s) version: %s' %
-                ('clang ' if is_clang else '', CC, version_str))
+  print_verbose(
+      f"Detected {'clang ' if is_clang else ''}C compiler (CC={CC}) version: {version_str}"
+  )
   if not ok:
-    warn('failed to autodetect C compiler version (CC=%s)' % CC)
+    warn(f'failed to autodetect C compiler version (CC={CC})')
   elif not is_clang and gcc_version < (4, 2, 0):
     # clang 3.2 is a little white lie because any clang version will probably
     # do for the C bits.  However, we might as well encourage people to upgrade
     # to a version that is not completely ancient.
-    warn('C compiler (CC=%s, %s) too old, need gcc 4.2 or clang 3.2' %
-         (CC, version_str))
+    warn(f'C compiler (CC={CC}, {version_str}) too old, need gcc 4.2 or clang 3.2')
 
   o['variables']['llvm_version'] = get_llvm_version(CC) if is_clang else '0.0'
 
@@ -1065,22 +1057,12 @@ def host_arch_cc():
     '__riscv'     : 'riscv',
   }
 
-  rtn = 'ia32' # default
-
-  for i in matchup:
-    if i in k and k[i] != '0':
-      rtn = matchup[i]
-      break
-
+  rtn = next((matchup[i] for i in matchup if i in k and k[i] != '0'), 'ia32')
   if rtn == 'mipsel' and '_LP64' in k:
     rtn = 'mips64el'
 
   if rtn == 'riscv':
-    if k['__riscv_xlen'] == '64':
-      rtn = 'riscv64'
-    else:
-      rtn = 'riscv32'
-
+    rtn = 'riscv64' if k['__riscv_xlen'] == '64' else 'riscv32'
   return rtn
 
 

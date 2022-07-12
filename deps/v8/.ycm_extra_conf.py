@@ -92,13 +92,7 @@ def GetClangCommandFromNinjaForFilename(v8_root, filename):
 
   # Generally, everyone benefits from including V8's root, because all of
   # V8's includes are relative to that.
-  v8_flags = ['-I' + os.path.join(v8_root)]
-
-  # Version of Clang used to compile V8 can be newer then version of
-  # libclang that YCM uses for completion. So it's possible that YCM's libclang
-  # doesn't know about some used warning options, which causes compilation
-  # warnings (and errors, because of '-Werror');
-  v8_flags.append('-Wno-unknown-warning-option')
+  v8_flags = [f'-I{os.path.join(v8_root)}', '-Wno-unknown-warning-option']
 
   # Header files can't be built. Instead, try to match a header file to its
   # corresponding source file.
@@ -123,9 +117,10 @@ def GetClangCommandFromNinjaForFilename(v8_root, filename):
   rel_filename = os.path.relpath(os.path.realpath(filename), out_dir)
 
   # Ask ninja how it would build our source file.
-  p = subprocess.Popen(['ninja', '-v', '-C', out_dir, '-t',
-                        'commands', rel_filename + '^'],
-                       stdout=subprocess.PIPE)
+  p = subprocess.Popen(
+      ['ninja', '-v', '-C', out_dir, '-t', 'commands', f'{rel_filename}^'],
+      stdout=subprocess.PIPE,
+  )
   stdout, stderr = p.communicate()
   if p.returncode:
     return v8_flags
@@ -149,11 +144,11 @@ def GetClangCommandFromNinjaForFilename(v8_root, filename):
         v8_flags.append(flag)
       else:
         abs_path = os.path.normpath(os.path.join(out_dir, flag[2:]))
-        v8_flags.append('-I' + abs_path)
+        v8_flags.append(f'-I{abs_path}')
     elif flag.startswith('-std'):
       v8_flags.append(flag)
     elif flag.startswith('-') and flag[1] in 'DWFfmO':
-      if flag == '-Wno-deprecated-register' or flag == '-Wno-header-guard':
+      if flag in ['-Wno-deprecated-register', '-Wno-header-guard']:
         # These flags causes libclang (3.3) to crash. Remove it until things
         # are fixed.
         continue

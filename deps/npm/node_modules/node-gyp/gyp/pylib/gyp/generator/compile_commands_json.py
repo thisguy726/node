@@ -34,7 +34,7 @@ generator_default_variables = {
 
 
 def IsMac(params):
-    return "mac" == gyp.common.GetFlavor(params)
+    return gyp.common.GetFlavor(params) == "mac"
 
 
 def CalculateVariables(default_variables, params):
@@ -58,7 +58,7 @@ def AddCommandsForTarget(cwd, target, params, per_config_commands):
         cflags_cc = cflags + cflags_cc
 
         defines = configuration.get("defines", [])
-        defines = ["-D" + s for s in defines]
+        defines = [f"-D{s}" for s in defines]
 
         # TODO(bnoordhuis) Handle generated source files.
         extensions = (".c", ".cc", ".cpp", ".cxx")
@@ -70,7 +70,7 @@ def AddCommandsForTarget(cwd, target, params, per_config_commands):
         # TODO(bnoordhuis) Handle generated header files.
         include_dirs = configuration.get("include_dirs", [])
         include_dirs = [s for s in include_dirs if not s.startswith("$(obj)")]
-        includes = ["-I" + resolve(s) for s in include_dirs]
+        includes = [f"-I{resolve(s)}" for s in include_dirs]
 
         defines = gyp.common.EncodePOSIXShellList(defines)
         includes = gyp.common.EncodePOSIXShellList(includes)

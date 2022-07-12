@@ -31,6 +31,7 @@ to change.
 """
 
 
+
 import gyp.common
 import pprint
 
@@ -56,25 +57,18 @@ _generator_identity_variables = [
     "STATIC_LIB_SUFFIX",
 ]
 
-# gypd doesn't define a default value for OS like many other generator
-# modules.  Specify "-D OS=whatever" on the command line to provide a value.
-generator_default_variables = {}
-
 # gypd supports multiple toolsets
 generator_supports_multiple_toolsets = True
 
-# TODO(mark): This always uses <, which isn't right.  The input module should
-# notify the generator to tell it which phase it is operating in, and this
-# module should use < for the early phase and then switch to > for the late
-# phase.  Bonus points for carrying @ back into the output too.
-for v in _generator_identity_variables:
-    generator_default_variables[v] = "<(%s)" % v
+generator_default_variables = {
+    v: f"<({v})" for v in _generator_identity_variables
+}
 
 
 def GenerateOutput(target_list, target_dicts, data, params):
     output_files = {}
     for qualified_target in target_list:
-        [input_file, target] = gyp.common.ParseQualifiedTarget(qualified_target)[0:2]
+        [input_file, target] = gyp.common.ParseQualifiedTarget(qualified_target)[:2]
 
         if input_file[-4:] != ".gyp":
             continue
@@ -84,6 +78,5 @@ def GenerateOutput(target_list, target_dicts, data, params):
         output_files[output_file] = output_files.get(output_file, input_file)
 
     for output_file, input_file in output_files.items():
-        output = open(output_file, "w")
-        pprint.pprint(data[input_file], output)
-        output.close()
+        with open(output_file, "w") as output:
+            pprint.pprint(data[input_file], output)
